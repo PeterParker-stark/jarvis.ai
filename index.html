@@ -58,6 +58,7 @@ let userName = "";
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
 
 function speak(text) {
   const speech = new SpeechSynthesisUtterance(text);
