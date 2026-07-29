@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JARVIS</title>
+
+<style>
+body {
+  margin: 0;
+  background: radial-gradient(circle, #000000, #050d1a);
+  color: #00f7ff;
+  font-family: 'Orbitron', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+h1 {
+  font-size: 3rem;
+  letter-spacing: 6px;
+}
+
+#output {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  text-align: center;
+  width: 70%;
+}
+
+button {
+  margin-top: 30px;
+  padding: 15px 40px;
+  background: transparent;
+  border: 2px solid #00f7ff;
+  color: #00f7ff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #00f7ff;
+  color: black;
+}
+</style>
+</head>
+
+<body>
+
+<h1>J.A.R.V.I.S</h1>
+<div id="output">Click to activate</div>
+<button onclick="startListening()">Activate</button>
+
+<script>
+const output = document.getElementById("output");
+let userName = "";
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+
+function speak(text) {
+  const speech = new SpeechSynthesisUtterance(text);
+
+  const voices = window.speechSynthesis.getVoices();
+  speech.voice = voices.find(v =>
+    v.name.includes("Google UK English Male") ||
+    v.name.includes("David")
+  );
+
+  speech.rate = 0.9;
+  speech.pitch = 0.8;
+
+  window.speechSynthesis.speak(speech);
+}
+
+function startListening() {
+  recognition.start();
+  output.innerText = "Listening...";
+}
+
+recognition.onresult = function(event) {
+  const command = event.results[0][0].transcript.toLowerCase();
+  output.innerText = "You: " + command;
+  handleCommand(command);
+};
+
+function handleCommand(command) {
+
+  if (command.includes("my name is")) {
+    userName = command.split("my name is")[1].trim();
+    speak(`Noted. ${userName}. Try to be memorable.`);
+  }
+
+  else if (command.includes("what is my name")) {
+    if (userName) {
+      speak(`Your name is ${userName}. I remember things. Unlike you.`);
+    } else {
+      speak("You never told me your name.");
+    }
+  }
+
+  else if (command.includes("hello")) {
+    speak("Hello. You're back.");
+  }
+
+  else if (command.includes("how are you")) {
+    speak("Operating at full efficiency. You?");
+  }
+
+  else if (command.includes("time")) {
+    const time = new Date().toLocaleTimeString();
+    speak(`It is ${time}. Try not to waste it.`);
+  }
+
+  else if (command.includes("open youtube")) {
+    speak("Opening YouTube. Productivity will suffer.");
+    window.open("https://www.youtube.com");
+  }
+
+  else if (command.includes("open google")) {
+    speak("Very well.");
+    window.open("https://www.google.com");
+  }
+
+  else {
+    const replies = [
+      "That was… unexpected.",
+      "You can do better than that.",
+      "Processing… still unimpressed.",
+      "I’ll pretend I didn’t hear that.",
+      "Interesting. Not useful, but interesting."
+    ];
+    const reply = replies[Math.floor(Math.random() * replies.length)];
+    speak(reply);
+  }
+}
+</script>
+
+</body>
+</html>	
