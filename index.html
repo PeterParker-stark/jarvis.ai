@@ -1,115 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Jarvis AI</title>
+
   <style>
     body {
       background: black;
-      color: #00f7ff;
-      font-family: Arial, sans-serif;
+      color: #00f0ff;
+      font-family: Arial;
       text-align: center;
-      padding-top: 100px;
     }
 
     button {
-      padding: 15px 30px;
+      padding: 12px 20px;
       font-size: 18px;
-      background: #00f7ff;
+      background: #00f0ff;
       border: none;
+      border-radius: 8px;
       cursor: pointer;
-      margin-top: 20px;
     }
 
     #output {
-      margin-top: 40px;
-      font-size: 20px;
+      text-align: left;
+      width: 80%;
+      margin: 20px auto;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #00f0ff;
+      padding: 15px;
+      border-radius: 10px;
     }
   </style>
 </head>
+
 <body>
 
   <h1>JARVIS</h1>
   <button onclick="startListening()">Activate</button>
-  <div id="output">Click Activate to begin</div>
 
-  <script>
-    const output = document.getElementById("output");
+  <div id="output"></div>
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+<script>
+const output = document.getElementById("output");
 
-    recognition.continuous = true;
-    recognition.lang = "en-US";
+// 🔑 PUT YOUR API KEY HERE
+const API_KEY = "PASTE_YOUR_OPENAI_KEY_HERE";
 
-    function startListening() {
-      recognition.start();
-      output.innerText = "Listening...";
+// 🎤 Speech Recognition
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-      recognition.onend = () => {
-        recognition.start(); // keeps it always listening
-      };
+if (!SpeechRecognition) {
+  output.innerHTML = "<div>Use Google Chrome for best experience.</div>";
+}
+
+const recognition = new SpeechRecognition();
+recognition.continuous = false;
+recognition.lang = "en-US";
+
+function startListening() {
+  recognition.start();
+  output.innerHTML += "<div><b>Jarvis:</b> Listening...</div>";
+}
+
+recognition.onresult = async function(event) {
+  const userText = event.results[0][0].transcript;
+
+  output.innerHTML += `<div><b>You:</b> ${userText}</div>`;
+  output.scrollTop = output.scrollHeight;
+
+  const reply = await askJarvis(userText);
+
+  speak(reply);
+};
+
+recognition.onend = () => recognition.start();
+
+// 🧠 AI BRAIN
+async function askJarvis(message) {
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + API_KEY
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are Jarvis from Iron Man. You are highly intelligent, witty, slightly sarcastic, and concise. You provide accurate helpful information, but always with personality and subtle humor."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.choices) {
+      return "Something went wrong. Check your API key.";
     }
 
-    recognition.onresult = function(event) {
-      const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-      output.innerText = "You: " + transcript;
+    return data.choices[0].message.content;
 
-      handleCommand(transcript);
-    };
+  } catch (err) {
+    return "Connection error. Try again.";
+  }
+}
 
-    function speak(text) {
-      window.speechSynthesis.cancel();
+// 🎙️ VOICE OUTPUT
+function speak(text) {
+  window.speechSynthesis.cancel();
 
-      const speech = new SpeechSynthesisUtterance(text);
+  const speech = new SpeechSynthesisUtterance(text);
 
-      speech.rate = 0.9;
-      speech.pitch = 0.8;
-      speech.volume = 1;
+  speech.rate = 0.9;
+  speech.pitch = 0.8;
 
-      window.speechSynthesis.speak(speech);
+  // Try best Jarvis-like voice
+  const voices = speechSynthesis.getVoices();
+  const jarvisVoice = voices.find(v => v.name.includes("Google UK English Male"));
 
-      output.innerText += "\nJarvis: " + text;
-    }
+  if (jarvisVoice) speech.voice = jarvisVoice;
 
-    function handleCommand(command) {
+  speechSynthesis.speak(speech);
 
-      // greetings
-      if (command.includes("hello") || command.includes("hi")) {
-        speak("Ah, you're back. Try not to break anything this time.");
-      }
-
-      else if (command.includes("how are you")) {
-        speak("Functioning perfectly. Unlike your last idea.");
-      }
-
-      else if (command.includes("your name")) {
-        speak("I am Jarvis. Obviously.");
-      }
-
-      // time
-      else if (command.includes("time")) {
-        const time = new Date().toLocaleTimeString();
-        speak("The time is " + time);
-      }
-
-      // open sites
-      else if (command.includes("youtube")) {
-        speak("Opening YouTube. Try not to get distracted.");
-        window.open("https://youtube.com");
-      }
-
-      else if (command.includes("google")) {
-        speak("Opening Google.");
-        window.open("https://google.com");
-      }
-
-      // fallback witty reply
-      else {
-        speak("I heard you say " + command + ". Fascinating. Truly.");
-      }
-    }
-  </script>
+  output.innerHTML += `<div><b>Jarvis:</b> ${text}</div>`;
+  output.scrollTop = output.scrollHeight;
+}
+</script>
 
 </body>
 </html>
